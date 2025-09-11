@@ -1,0 +1,80 @@
+// Gradle初始化脚本，用于配置国内镜像源
+// 使用方法：将此文件放在项目根目录或 ~/.gradle/ 目录下
+
+allprojects {
+    repositories {
+        // 优先使用官方仓库确保Firebase等Google服务依赖可用
+        google()
+        mavenCentral()
+        
+        // 国内镜像源作为加速（排除Firebase相关）
+        maven { 
+            name 'Aliyun Google'
+            url 'https://maven.aliyun.com/repository/google'
+            content {
+                excludeGroupByRegex("com\\.google\\.firebase.*")
+            }
+        }
+        maven { 
+            name 'Aliyun Public'
+            url 'https://maven.aliyun.com/repository/public' 
+        }
+        maven { 
+            name 'Aliyun Gradle Plugin'
+            url 'https://maven.aliyun.com/repository/gradle-plugin'
+        }
+        maven { 
+            name 'Huawei Cloud'
+            url 'https://repo.huaweicloud.com/repository/maven/' 
+        }
+        maven { 
+            name 'Google Maven Central Asia'
+            url 'https://maven-central-asia.storage-download.googleapis.com/maven2/' 
+        }
+        maven { 
+            name 'Tencent'
+            url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' 
+        }
+        
+        // JitPack 保持原样
+        maven { 
+            name 'JitPack'
+            url 'https://jitpack.io' 
+        }
+        
+        gradlePluginPortal()
+    }
+    
+    // 构建缓存配置
+    buildCache {
+        local {
+            enabled = true
+        }
+    }
+}
+
+// 插件仓库配置
+settingsEvaluated { settings ->
+    settings.pluginManagement {
+        repositories {
+            // 优先使用官方仓库
+            google()
+            gradlePluginPortal()
+            mavenCentral()
+            
+            // 国内镜像源作为加速
+            maven { 
+                name 'Aliyun Gradle Plugin'
+                url 'https://maven.aliyun.com/repository/gradle-plugin'
+            }
+            maven { 
+                name 'Aliyun Public'
+                url 'https://maven.aliyun.com/repository/public' 
+            }
+            maven { 
+                name 'Aliyun Google'
+                url 'https://maven.aliyun.com/repository/google'
+            }
+        }
+    }
+}
