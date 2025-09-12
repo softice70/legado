@@ -1,0 +1,92 @@
+name: 同步上游更新
+
+on:
+  schedule:
+    # 每天UTC时间02:00（北京时间10:00）检查上游更新
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # 允许手动触发
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: 配置Git
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+    
+    - name: 添加上游仓库
+      run: |
+        git remote add upstream https://github.com/gedoor/legado.git
+        git fetch upstream
+    
+    - name: 检查上游更新
+      id: check-updates
+      run: |
+        # 获取上游最新提交
+        upstream_commit=$(git rev-parse upstream/master)
+        local_commit=$(git rev-parse origin/master)
+        
+        echo "upstream_commit=$upstream_commit" >> $GITHUB_OUTPUT
+        echo "local_commit=$local_commit" >> $GITHUB_OUTPUT
+        
+        if [ "$upstream_commit" != "$local_commit" ]; then
+          echo "has_updates=true" >> $GITHUB_OUTPUT
+          echo "发现上游更新"
+        else
+          echo "has_updates=false" >> $GITHUB_OUTPUT
+          echo "没有上游更新"
+        fi
+    
+    - name: 同步上游到master分支
+      if: steps.check-updates.outputs.has_updates == 'true'
+      run: |
+        git checkout master
+        git merge upstream/master --no-edit
+        git push origin master
+    
+    - name: 创建Pull Request到personal-dev
+      if: steps.check-updates.outputs.has_updates == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: auto-sync/upstream-updates
+        base: personal-dev
+        title: '🔄 自动同步上游更新'
+        body: |
+          ## 自动同步上游更新
+          
+          此PR包含来自上游仓库 `gedoor/legado` 的最新更新。
+          
+          ### 更新信息
+          - 上游提交: ${{ steps.check-updates.outputs.upstream_commit }}
+          - 本地提交: ${{ steps.check-updates.outputs.local_commit }}
+          
+          ### 注意事项
+          - 请仔细检查更改内容
+          - 如有冲突，请手动解决
+          - 测试通过后再合并
+          
+          ---
+          *此PR由GitHub Actions自动创建*
+        labels: |
+          upstream-sync
+          automated
+        draft: false
+    
+    - name: 通知结果
+      if: always()
+      run: |
+        if [ "${{ steps.check-updates.outputs.has_updates }}" == "true" ]; then
+          echo "✅ 发现并同步了上游更新"
+        else
+          echo "ℹ️ 没有发现上游更新"
+        fi
