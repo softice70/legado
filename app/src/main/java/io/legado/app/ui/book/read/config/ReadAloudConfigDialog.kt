@@ -84,6 +84,9 @@ class ReadAloudConfigDialog : BasePrefDialogFragment() {
             findPreference<SwitchPreference>(PreferKey.pauseReadAloudWhilePhoneCalls)?.let {
                 it.isEnabled = AppConfig.ignoreAudioFocus
             }
+            findPreference<SwitchPreference>(PreferKey.pauseReadAloudWhileVoipCalls)?.let {
+                it.isEnabled = AppConfig.ignoreAudioFocus
+            }
         }
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -122,6 +125,9 @@ class ReadAloudConfigDialog : BasePrefDialogFragment() {
 
                 PreferKey.ignoreAudioFocus -> {
                     findPreference<SwitchPreference>(PreferKey.pauseReadAloudWhilePhoneCalls)?.let {
+                        it.isEnabled = AppConfig.ignoreAudioFocus
+                    }
+                    findPreference<SwitchPreference>(PreferKey.pauseReadAloudWhileVoipCalls)?.let {
                         it.isEnabled = AppConfig.ignoreAudioFocus
                     }
                 }

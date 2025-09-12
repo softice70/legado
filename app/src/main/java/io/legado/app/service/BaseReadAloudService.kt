@@ -132,6 +132,9 @@ abstract class BaseReadAloudService : BaseService(),
     var paragraphStartPos = 0
     var readAloudByPage = false
         private set
+    private var audioModeCheckJob: Job? = null
+    private var lastAudioMode = AudioManager.MODE_NORMAL
+    private var needResumeOnVoipEnd = false
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -146,10 +149,13 @@ abstract class BaseReadAloudService : BaseService(),
         super.onCreate()
         isRun = true
         pause = false
+        
+
         observeLiveBus()
         initMediaSession()
         initBroadcastReceiver()
         initPhoneStateListener()
+        initAudioModeMonitor()
         upMediaSessionPlaybackState(PlaybackStateCompat.STATE_PLAYING)
         setTimer(AppConfig.ttsTimer)
         if (AppConfig.ttsTimer > 0) {
@@ -201,6 +207,7 @@ abstract class BaseReadAloudService : BaseService(),
         mediaSessionCompat.release()
         ReadBook.uploadProgress()
         unregisterPhoneStateListener(phoneStateListener)
+        stopAudioModeMonitor()
         upNotificationJob?.invokeOnCompletion {
             notificationManager.cancel(NotificationId.ReadAloudService)
         }
@@ -422,15 +429,26 @@ abstract class BaseReadAloudService : BaseService(),
      * @return 音频焦点
      */
     fun requestFocus(): Boolean {
-        if (AppConfig.ignoreAudioFocus) {
+        // 如果忽略音频焦点但没有开启VoIP通话暂停，直接返回true
+        if (AppConfig.ignoreAudioFocus && !AppConfig.pauseReadAloudWhileVoipCalls) {
             return true
         }
+        
         val requestFocus = MediaHelp.requestFocus(mFocusRequest)
+        
         if (!requestFocus) {
-            pauseReadAloud(false)
-            toastOnUi("未获取到音频焦点")
+            if (!AppConfig.ignoreAudioFocus) {
+                pauseReadAloud(false)
+                toastOnUi("未获取到音频焦点")
+            }
         }
-        return requestFocus
+        
+        // 如果忽略音频焦点但开启了VoIP暂停，返回true让播放继续，但保持监听器活跃
+        return if (AppConfig.ignoreAudioFocus && AppConfig.pauseReadAloudWhileVoipCalls) {
+            true
+        } else {
+            requestFocus
+        }
     }
 
     /**
@@ -532,12 +550,23 @@ abstract class BaseReadAloudService : BaseService(),
      * 音频焦点变化
      */
     override fun onAudioFocusChange(focusChange: Int) {
-        if (AppConfig.ignoreAudioFocus) {
-            AppLog.put("忽略音频焦点处理(TTS)")
-            return
-        }
         when (focusChange) {
             AudioManager.AUDIOFOCUS_GAIN -> {
+                // VoIP通话结束时的恢复处理
+                if (AppConfig.ignoreAudioFocus && AppConfig.pauseReadAloudWhileVoipCalls) {
+                    if (needResumeOnAudioFocusGain) {
+                        AppLog.put("VoIP通话结束,继续朗读")
+                        resumeReadAloud()
+                    } else {
+                        AppLog.put("VoIP通话结束")
+                    }
+                    return
+                }
+                
+                if (AppConfig.ignoreAudioFocus) {
+                    AppLog.put("忽略音频焦点处理(TTS) - 焦点获得")
+                    return
+                }
                 if (needResumeOnAudioFocusGain) {
                     AppLog.put("音频焦点获得,继续朗读")
                     resumeReadAloud()
@@ -547,11 +576,36 @@ abstract class BaseReadAloudService : BaseService(),
             }
 
             AudioManager.AUDIOFOCUS_LOSS -> {
+                // VoIP通话开始时的暂停处理
+                if (AppConfig.ignoreAudioFocus && AppConfig.pauseReadAloudWhileVoipCalls) {
+                    AppLog.put("VoIP通话开始,暂停朗读")
+                    pauseReadAloud()
+                    return
+                }
+                
+                if (AppConfig.ignoreAudioFocus && !AppConfig.pauseReadAloudWhileVoipCalls) {
+                    AppLog.put("忽略音频焦点处理(TTS) - 永久丢失")
+                    return
+                }
                 AppLog.put("音频焦点丢失,暂停朗读")
                 pauseReadAloud()
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // VoIP通话开始时的暂停处理
+                if (AppConfig.ignoreAudioFocus && AppConfig.pauseReadAloudWhileVoipCalls) {
+                    AppLog.put("VoIP通话开始,暂停朗读")
+                    if (!pause) {
+                        needResumeOnAudioFocusGain = true
+                        pauseReadAloud(false)
+                    }
+                    return
+                }
+                
+                if (AppConfig.ignoreAudioFocus && !AppConfig.pauseReadAloudWhileVoipCalls) {
+                    AppLog.put("忽略音频焦点处理(TTS) - 暂时丢失")
+                    return
+                }
                 AppLog.put("音频焦点暂时丢失并会很快再次获得,暂停朗读")
                 if (!pause) {
                     needResumeOnAudioFocusGain = true
@@ -560,6 +614,20 @@ abstract class BaseReadAloudService : BaseService(),
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // VoIP通话时也可能触发这个事件，需要检查VoIP暂停配置
+                if (AppConfig.ignoreAudioFocus && AppConfig.pauseReadAloudWhileVoipCalls) {
+                    AppLog.put("VoIP通话开始(可降音量),暂停朗读")
+                    if (!pause) {
+                        needResumeOnAudioFocusGain = true
+                        pauseReadAloud(false)
+                    }
+                    return
+                }
+                
+                if (AppConfig.ignoreAudioFocus) {
+                    AppLog.put("忽略音频焦点处理(TTS) - 短暂丢失可降音量")
+                    return
+                }
                 // 短暂丢失焦点，这种情况是被其他应用申请了短暂的焦点希望其他声音能压低音量（或者关闭声音）凸显这个声音（比如短信提示音），
                 AppLog.put("音频焦点短暂丢失,不做处理")
             }
@@ -691,13 +759,12 @@ abstract class BaseReadAloudService : BaseService(),
     }
 
     private fun initPhoneStateListener() {
-        val needRegister = AppConfig.ignoreAudioFocus && AppConfig.pauseReadAloudWhilePhoneCalls
-        if (needRegister && registeredPhoneStateListener) {
-            return
-        }
-        if (needRegister) {
+        // 只要开启了来电暂停就需要注册监听器，不管是否忽略音频焦点
+        val needRegister = AppConfig.pauseReadAloudWhilePhoneCalls
+        
+        if (needRegister && !registeredPhoneStateListener) {
             registerPhoneStateListener(phoneStateListener)
-        } else {
+        } else if (!needRegister && registeredPhoneStateListener) {
             unregisterPhoneStateListener(phoneStateListener)
         }
     }
@@ -740,10 +807,17 @@ abstract class BaseReadAloudService : BaseService(),
     inner class ReadAloudPhoneStateListener : PhoneStateListener() {
         override fun onCallStateChanged(state: Int, phoneNumber: String?) {
             super.onCallStateChanged(state, phoneNumber)
+            
+            // 检查是否开启了来电暂停功能
+            if (!AppConfig.pauseReadAloudWhilePhoneCalls) {
+                return
+            }
+            
             when (state) {
                 TelephonyManager.CALL_STATE_IDLE -> {
                     if (needResumeOnCallStateIdle) {
                         AppLog.put("来电结束,继续朗读")
+                        needResumeOnCallStateIdle = false
                         resumeReadAloud()
                     } else {
                         AppLog.put("来电结束")
@@ -766,5 +840,79 @@ abstract class BaseReadAloudService : BaseService(),
             }
         }
     }
+
+    /**
+     * 初始化音频模式监听器
+     * 用于检测VoIP通话状态
+     */
+    private fun initAudioModeMonitor() {
+        if (!AppConfig.pauseReadAloudWhileVoipCalls) {
+            return
+        }
+        
+        lastAudioMode = audioManager.mode
+        
+        audioModeCheckJob = lifecycleScope.launch {
+            while (isActive) {
+                try {
+                    val currentMode = audioManager.mode
+                    if (currentMode != lastAudioMode) {
+                        handleAudioModeChange(lastAudioMode, currentMode)
+                        lastAudioMode = currentMode
+                    }
+                    delay(500) // 每500ms检查一次
+                } catch (e: Exception) {
+                    break
+                }
+            }
+        }
+    }
+    
+    /**
+     * 停止音频模式监听器
+     */
+    private fun stopAudioModeMonitor() {
+        audioModeCheckJob?.cancel()
+        audioModeCheckJob = null
+    }
+    
+    /**
+     * 处理音频模式变化
+     */
+    private fun handleAudioModeChange(oldMode: Int, newMode: Int) {
+        when (newMode) {
+            AudioManager.MODE_IN_COMMUNICATION -> {
+                // 进入通话模式（包括VoIP通话）
+                if (!pause) {
+                    AppLog.put("VoIP通话开始(音频模式检测),暂停朗读")
+                    needResumeOnVoipEnd = true
+                    pauseReadAloud(false) // 不放弃音频焦点，因为我们忽略音频焦点
+                }
+            }
+            
+            AudioManager.MODE_NORMAL -> {
+                // 回到正常模式
+                if (oldMode == AudioManager.MODE_IN_COMMUNICATION) {
+                    if (needResumeOnVoipEnd) {
+                        AppLog.put("VoIP通话结束(音频模式检测),继续朗读")
+                        needResumeOnVoipEnd = false
+                        resumeReadAloud()
+                    } else {
+                        AppLog.put("VoIP通话结束(音频模式检测)")
+                    }
+                }
+            }
+            
+            AudioManager.MODE_IN_CALL -> {
+                // 普通电话通话模式，由PhoneStateListener处理
+            }
+            
+            AudioManager.MODE_RINGTONE -> {
+                // 铃声模式
+            }
+        }
+    }
+    
+
 
 }

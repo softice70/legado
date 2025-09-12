@@ -487,6 +487,10 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         get() = appCtx.getPrefBoolean(PreferKey.pauseReadAloudWhilePhoneCalls, false)
         set(value) = appCtx.putPrefBoolean(PreferKey.pauseReadAloudWhilePhoneCalls, value)
 
+    var pauseReadAloudWhileVoipCalls
+        get() = appCtx.getPrefBoolean(PreferKey.pauseReadAloudWhileVoipCalls, false)
+        set(value) = appCtx.putPrefBoolean(PreferKey.pauseReadAloudWhileVoipCalls, value)
+
     val onlyLatestBackup get() = appCtx.getPrefBoolean(PreferKey.onlyLatestBackup, true)
 
     val defaultHomePage get() = appCtx.getPrefString(PreferKey.defaultHomePage, "bookshelf")
