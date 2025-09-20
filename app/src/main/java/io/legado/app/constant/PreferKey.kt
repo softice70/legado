@@ -185,4 +185,20 @@ object PreferKey {
     const val showReadTitleAddition = "showReadTitleAddition"
     const val readBarStyleFollowPage = "readBarStyleFollowPage"
     const val contentSelectSpeakMod = "contentReadAloudMod"
+    
+    // AI相关配置
+    const val aiProvider = "ai_provider"
+    const val aiApiKey = "ai_api_key"
+    const val aiAccessKey = "ai_access_key"
+    const val aiSecretKey = "ai_secret_key"
+    const val aiApiEndpoint = "ai_api_endpoint"
+    const val aiAuthType = "ai_auth_type"
+    const val aiModel = "ai_model"
+    const val wenxinModel = "wenxin_model"
+    const val qianwenModel = "qianwen_model"
+    const val openaiModel = "openai_model"
+    const val summaryRatio = "summary_ratio"
+    const val aiTemperature = "ai_temperature_int"
+    const val aiMaxTokens = "ai_max_tokens"
+    const val aiTimeout = "ai_timeout"
 }

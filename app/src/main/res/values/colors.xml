@@ -113,4 +113,10 @@
     <color name="ate_navigation_drawer_selected_dark">#202020</color>
 
     <color name="book_ant_10">#141414</color>
+
+    <!-- 摘要阅读模式相关颜色 -->
+    <color name="primary_text">#DE000000</color>
+    <color name="error_text">#F44336</color>
+    <color name="colorAccent">@color/accent</color>
+
 </resources>

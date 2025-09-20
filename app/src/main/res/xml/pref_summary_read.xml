@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="摘要设置"
+        android:key="category_summary_settings">
+
+        <ListPreference
+            android:key="summary_length"
+            android:title="摘要长度"
+            android:entries="@array/summary_length_entries"
+            android:entryValues="@array/summary_length_values"
+            android:defaultValue="30"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:key="summary_ai_provider"
+            android:title="AI服务提供商"
+            android:entries="@array/ai_provider_entries"
+            android:entryValues="@array/ai_provider_values"
+            android:defaultValue="local"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="缓存设置"
+        android:key="category_cache_settings">
+
+        <SwitchPreferenceCompat
+            android:key="enable_cache"
+            android:title="启用缓存"
+            android:summary="缓存已生成的摘要"
+            android:defaultValue="true" />
+
+        <ListPreference
+            android:key="cache_validity"
+            android:title="缓存有效期"
+            android:entries="@array/cache_validity_entries"
+            android:entryValues="@array/cache_validity_values"
+            android:defaultValue="30"
+            app:useSimpleSummaryProvider="true"
+            android:dependency="enable_cache" />
+
+        <Preference
+            android:key="clear_cache"
+            android:title="清除缓存"
+            android:summary="清除所有摘要缓存" />
+
+        <Preference
+            android:key="cache_stats"
+            android:title="缓存统计"
+            android:summary="查看缓存使用情况" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="更多选项"
+        android:key="category_more_options">
+
+        <ListPreference
+            android:key="text_encoding"
+            android:title="文本编码"
+            android:entries="@array/text_encoding_entries"
+            android:entryValues="@array/text_encoding_values"
+            android:defaultValue="UTF-8"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

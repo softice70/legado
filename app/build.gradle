@@ -45,6 +45,15 @@ android {
                 enableV4Signing = true
             }
         }
+        // 为debug构建类型添加固定签名配置，确保每次构建使用相同签名
+        debug {
+            storeFile file("${rootProject.projectDir}/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
     }
     defaultConfig {
         applicationId "io.legado.app"
@@ -76,6 +85,9 @@ android {
         release {
             if (project.hasProperty("RELEASE_STORE_FILE")) {
                 signingConfig signingConfigs.myConfig
+            } else {
+                // 如果没有配置release签名，使用debug签名确保一致性
+                signingConfig signingConfigs.debug
             }
             applicationIdSuffix '.release'
             if (getApplicationIdSuffix() == '.releaseA') {
@@ -89,9 +101,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'cronet-proguard-rules.pro'
         }
         debug {
-            if (project.hasProperty("RELEASE_STORE_FILE")) {
-                signingConfig signingConfigs.myConfig
-            }
+            // 使用固定的debug签名配置，确保每次构建使用相同签名
+            signingConfig signingConfigs.debug
             manifestPlaceholders.put("app_name", "@string/app_name")
 
             applicationIdSuffix '.debug'

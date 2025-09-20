@@ -199,4 +199,109 @@
         android:defaultValue="false"
         android:key="readBarStyleFollowPage"
         android:title="@string/read_bar_style_follow_page" />
+
+    <!-- AI大模型配置分组 -->
+    <androidx.preference.PreferenceCategory
+        android:title="@string/ai_model_config"
+        app:iconSpaceReserved="false">
+
+        <io.legado.app.lib.prefs.NameListPreference
+            android:defaultValue="ernie-3.5-8k"
+            android:entries="@array/merged_ai_model_entries"
+            android:entryValues="@array/merged_ai_model_values"
+            android:key="ai_model"
+            android:summary="@string/ai_model_summary"
+            android:title="@string/ai_model"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true" />
+
+        <io.legado.app.lib.prefs.NameListPreference
+            android:defaultValue="api_key"
+            android:entries="@array/api_auth_type_entries"
+            android:entryValues="@array/api_auth_type_values"
+            android:key="ai_auth_type"
+            android:summary="@string/ai_auth_type_summary"
+            android:title="@string/ai_auth_type"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true" />
+
+        <io.legado.app.lib.prefs.EditTextPreference
+            android:key="ai_api_key"
+            android:summary="@string/ai_api_key_summary"
+            android:title="@string/ai_api_key"
+            android:inputType="textPassword"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true" />
+
+        <io.legado.app.lib.prefs.EditTextPreference
+            android:key="ai_access_key"
+            android:summary="@string/ai_access_key_summary"
+            android:title="@string/ai_access_key"
+            android:inputType="text"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true" />
+
+        <io.legado.app.lib.prefs.EditTextPreference
+            android:key="ai_secret_key"
+            android:summary="@string/ai_secret_key_summary"
+            android:title="@string/ai_secret_key"
+            android:inputType="textPassword"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true" />
+
+
+
+        <androidx.preference.SeekBarPreference
+            android:defaultValue="30"
+            android:key="summary_ratio"
+            android:max="100"
+            android:min="10"
+            android:summary="@string/summary_ratio_summary"
+            android:title="@string/summary_ratio"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true"
+            app:showSeekBarValue="true" />
+
+        <androidx.preference.SeekBarPreference
+            android:defaultValue="7"
+            android:key="ai_temperature_int"
+            android:max="20"
+            android:min="0"
+            android:summary="@string/ai_temperature_summary"
+            android:title="@string/ai_temperature"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true"
+            app:showSeekBarValue="true" />
+
+        <androidx.preference.SeekBarPreference
+            android:defaultValue="1000"
+            android:key="ai_max_tokens"
+            android:max="4000"
+            android:min="100"
+            android:summary="@string/ai_max_tokens_summary"
+            android:title="@string/ai_max_tokens"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true"
+            app:showSeekBarValue="true" />
+
+        <androidx.preference.SeekBarPreference
+            android:defaultValue="30"
+            android:key="ai_timeout"
+            android:max="120"
+            android:min="10"
+            android:summary="@string/ai_timeout_summary"
+            android:title="@string/ai_timeout"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true"
+            app:showSeekBarValue="true" />
+
+        <io.legado.app.lib.prefs.Preference
+            android:key="ai_test_connection"
+            android:summary="@string/ai_test_connection_summary"
+            android:title="@string/ai_test_connection"
+            app:iconSpaceReserved="false"
+            app:isBottomBackground="true" />
+
+    </androidx.preference.PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>

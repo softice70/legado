@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="阅读设置"
+        android:key="category_read_settings">
+
+        <ListPreference
+            android:key="font_size"
+            android:title="字体大小"
+            android:entries="@array/font_size_entries"
+            android:entryValues="@array/font_size_values"
+            android:defaultValue="16"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:key="line_spacing"
+            android:title="行间距"
+            android:entries="@array/line_spacing_entries"
+            android:entryValues="@array/line_spacing_values"
+            android:defaultValue="1.5"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            android:key="summary_mode"
+            android:title="摘要阅读模式"
+            android:summary="切换到摘要阅读模式"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

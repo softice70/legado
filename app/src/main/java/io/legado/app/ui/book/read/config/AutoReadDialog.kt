@@ -50,11 +50,11 @@ class AutoReadDialog : BaseDialogFragment(R.layout.dialog_auto_read) {
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) = binding.run {
-        val bottomDialog = (activity as ReadBookActivity).bottomDialog++
-        if (bottomDialog > 0) {
+        if ((activity as ReadBookActivity).bottomDialog > 0) {
             dismiss()
             return
         }
+        (activity as ReadBookActivity).bottomDialog++
         val bg = requireContext().bottomBackground
         val isLight = ColorUtils.isColorLight(bg)
         val textColor = requireContext().getPrimaryTextColor(isLight)

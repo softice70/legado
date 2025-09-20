@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 字体大小选项 -->
+    <string-array name="font_size_entries">
+        <item>小</item>
+        <item>标准</item>
+        <item>大</item>
+        <item>特大</item>
+    </string-array>
+
+    <string-array name="font_size_values">
+        <item>14</item>
+        <item>16</item>
+        <item>18</item>
+        <item>20</item>
+    </string-array>
+
+    <!-- 行间距选项 -->
+    <string-array name="line_spacing_entries">
+        <item>紧凑</item>
+        <item>标准</item>
+        <item>宽松</item>
+        <item>很宽松</item>
+    </string-array>
+
+    <string-array name="line_spacing_values">
+        <item>1.2</item>
+        <item>1.5</item>
+        <item>1.8</item>
+        <item>2.0</item>
+    </string-array>
+
+    <!-- 文本编码选项 -->
+    <string-array name="text_encoding_entries">
+        <item>UTF-8</item>
+        <item>GBK</item>
+        <item>GB2312</item>
+        <item>ISO-8859-1</item>
+    </string-array>
+
+    <string-array name="text_encoding_values">
+        <item>UTF-8</item>
+        <item>GBK</item>
+        <item>GB2312</item>
+        <item>ISO-8859-1</item>
+    </string-array>
+
+    <!-- 摘要长度选项 -->
+    <string-array name="summary_length_entries">
+        <item>简短</item>
+        <item>标准</item>
+        <item>详细</item>
+        <item>完整</item>
+    </string-array>
+
+    <string-array name="summary_length_values">
+        <item>30</item>
+        <item>50</item>
+        <item>80</item>
+        <item>100</item>
+    </string-array>
+
+    <!-- AI模型提供商选项 -->
+    <string-array name="ai_provider_entries">
+        <item>文心一言 (百度)</item>
+        <item>通义千问 (阿里)</item>
+        <item>OpenAI</item>
+        <item>本地算法</item>
+    </string-array>
+
+    <string-array name="ai_provider_values">
+        <item>wenxin</item>
+        <item>qianwen</item>
+        <item>openai</item>
+        <item>local</item>
+    </string-array>
+
+    <!-- 文心一言模型选项 -->
+    <string-array name="wenxin_model_entries">
+        <item>ERNIE-4.0-8K</item>
+        <item>ERNIE-4.0-8K-Preview</item>
+        <item>ERNIE-3.5-8K</item>
+        <item>ERNIE-3.5-8K-Preview</item>
+        <item>ERNIE-Lite-8K</item>
+        <item>ERNIE-Speed-8K</item>
+        <item>ERNIE-Speed-128K</item>
+        <item>ERNIE-Tiny-8K</item>
+    </string-array>
+
+    <string-array name="wenxin_model_values">
+        <item>ernie-4.0-8k</item>
+        <item>ernie-4.0-8k-preview</item>
+        <item>ernie-3.5-8k</item>
+        <item>ernie-3.5-8k-preview</item>
+        <item>ernie-lite-8k</item>
+        <item>ernie-speed-8k</item>
+        <item>ernie-speed-128k</item>
+        <item>ernie-tiny-8k</item>
+    </string-array>
+
+    <!-- 通义千问模型选项 -->
+    <string-array name="qianwen_model_entries">
+        <item>qwen-turbo</item>
+        <item>qwen-plus</item>
+        <item>qwen-max</item>
+        <item>qwen-max-1201</item>
+        <item>qwen-max-longcontext</item>
+        <item>qwen-long</item>
+        <item>qwen-coder-turbo</item>
+        <item>qwen-math-turbo</item>
+    </string-array>
+
+    <string-array name="qianwen_model_values">
+        <item>qwen-turbo</item>
+        <item>qwen-plus</item>
+        <item>qwen-max</item>
+        <item>qwen-max-1201</item>
+        <item>qwen-max-longcontext</item>
+        <item>qwen-long</item>
+        <item>qwen-coder-turbo</item>
+        <item>qwen-math-turbo</item>
+    </string-array>
+
+    <!-- 合并的AI模型选项 -->
+    <string-array name="merged_ai_model_entries">
+        <item>文心一言 - ERNIE-4.0-8K</item>
+        <item>文心一言 - ERNIE-4.0-8K-Preview</item>
+        <item>文心一言 - ERNIE-3.5-8K</item>
+        <item>文心一言 - ERNIE-3.5-8K-Preview</item>
+        <item>文心一言 - ERNIE-Lite-8K</item>
+        <item>文心一言 - ERNIE-Speed-8K</item>
+        <item>文心一言 - ERNIE-Speed-128K</item>
+        <item>文心一言 - ERNIE-Tiny-8K</item>
+        <item>通义千问 - qwen-turbo</item>
+        <item>通义千问 - qwen-plus</item>
+        <item>通义千问 - qwen-max</item>
+        <item>通义千问 - qwen-max-1201</item>
+        <item>通义千问 - qwen-max-longcontext</item>
+        <item>通义千问 - qwen-long</item>
+        <item>通义千问 - qwen-coder-turbo</item>
+        <item>通义千问 - qwen-math-turbo</item>
+    </string-array>
+
+    <string-array name="merged_ai_model_values">
+        <item>wenxin:ernie-4.0-8k</item>
+        <item>wenxin:ernie-4.0-8k-preview</item>
+        <item>wenxin:ernie-3.5-8k</item>
+        <item>wenxin:ernie-3.5-8k-preview</item>
+        <item>wenxin:ernie-lite-8k</item>
+        <item>wenxin:ernie-speed-8k</item>
+        <item>wenxin:ernie-speed-128k</item>
+        <item>wenxin:ernie-tiny-8k</item>
+        <item>qianwen:qwen-turbo</item>
+        <item>qianwen:qwen-plus</item>
+        <item>qianwen:qwen-max</item>
+        <item>qianwen:qwen-max-1201</item>
+        <item>qianwen:qwen-max-longcontext</item>
+        <item>qianwen:qwen-long</item>
+        <item>qianwen:qwen-coder-turbo</item>
+        <item>qianwen:qwen-math-turbo</item>
+    </string-array>
+
+    <!-- OpenAI模型选项 -->
+    <string-array name="openai_model_entries">
+        <item>GPT-3.5-turbo</item>
+        <item>GPT-4</item>
+        <item>GPT-4-turbo</item>
+        <item>GPT-4o</item>
+        <item>GPT-4o-mini</item>
+    </string-array>
+
+    <string-array name="openai_model_values">
+        <item>gpt-3.5-turbo</item>
+        <item>gpt-4</item>
+        <item>gpt-4-turbo</item>
+        <item>gpt-4o</item>
+        <item>gpt-4o-mini</item>
+    </string-array>
+
+    <!-- API认证类型选项 -->
+    <string-array name="api_auth_type_entries">
+        <item>API Key</item>
+        <item>Access Key + Secret Key</item>
+        <item>Bearer Token</item>
+    </string-array>
+
+    <string-array name="api_auth_type_values">
+        <item>api_key</item>
+        <item>ak_sk</item>
+        <item>bearer_token</item>
+    </string-array>
+
+    <!-- 缓存有效期选项 -->
+    <string-array name="cache_validity_entries">
+        <item>1天</item>
+        <item>3天</item>
+        <item>7天</item>
+        <item>30天</item>
+    </string-array>
+
+    <string-array name="cache_validity_values">
+        <item>1</item>
+        <item>3</item>
+        <item>7</item>
+        <item>30</item>
+    </string-array>
+
+</resources>

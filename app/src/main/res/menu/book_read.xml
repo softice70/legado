@@ -37,9 +37,10 @@
     <group android:id="@+id/menu_group_local">
 
         <item
-            android:id="@+id/menu_set_charset"
-            android:icon="@drawable/ic_translate"
-            android:title="@string/set_charset"
+            android:id="@+id/menu_summary_mode"
+            android:checkable="true"
+            android:icon="@drawable/ic_read_mode_normal"
+            android:title="@string/toggle_mode"
             app:showAsAction="always" />
 
     </group>
@@ -152,4 +153,8 @@
         android:title="@string/help"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menu_set_charset"
+        android:title="@string/set_charset"
+        app:showAsAction="never" />
 </menu>

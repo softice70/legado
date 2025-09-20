@@ -31,6 +31,8 @@ import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.removePref
 import io.legado.app.utils.setEdgeEffectColor
+import io.legado.app.utils.LogUtils
+
 
 class MoreConfigDialog : BasePrefDialogFragment() {
     private val readPreferTag = "readPreferenceFragment"
@@ -45,7 +47,11 @@ class MoreConfigDialog : BasePrefDialogFragment() {
             attr.dimAmount = 0.0f
             attr.gravity = Gravity.BOTTOM
             attributes = attr
-            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, 360.dpToPx())
+            
+            // 使用屏幕高度的90%作为最大高度
+            val screenHeight = resources.displayMetrics.heightPixels
+            val maxHeight = (screenHeight * 0.9).toInt()
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, maxHeight)
         }
     }
 
@@ -56,19 +62,37 @@ class MoreConfigDialog : BasePrefDialogFragment() {
     ): View {
         (activity as ReadBookActivity).bottomDialog++
         val view = LinearLayout(context)
-        view.setBackgroundColor(requireContext().bottomBackground)
+        view.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        )
+        view.orientation = LinearLayout.VERTICAL
+        // 修复：确保背景色和文字颜色有足够的对比度
+        val backgroundColor = requireContext().bottomBackground
+        view.setBackgroundColor(backgroundColor)
         view.id = R.id.tag1
-        container?.addView(view)
+        // 修复：避免重复添加view导致崩溃
+        if (container?.findViewById<View>(R.id.tag1) == null) {
+            container?.addView(view)
+        }
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        var preferenceFragment = childFragmentManager.findFragmentByTag(readPreferTag)
-        if (preferenceFragment == null) preferenceFragment = ReadPreferenceFragment()
-        childFragmentManager.beginTransaction()
-            .replace(view.id, preferenceFragment, readPreferTag)
-            .commit()
+        try {
+            var preferenceFragment = childFragmentManager.findFragmentByTag(readPreferTag)
+            if (preferenceFragment == null) {
+                preferenceFragment = ReadPreferenceFragment()
+            }
+            childFragmentManager.beginTransaction()
+                .replace(view.id, preferenceFragment, readPreferTag)
+                .commitAllowingStateLoss() // 使用commitAllowingStateLoss避免状态异常
+            
+
+        } catch (e: Exception) {
+            LogUtils.e("MoreConfigDialog", "Error creating preference fragment: ${e.message}")
+        }
     }
 
     override fun onDismiss(dialog: DialogInterface) {
@@ -83,11 +107,15 @@ class MoreConfigDialog : BasePrefDialogFragment() {
 
         @SuppressLint("RestrictedApi")
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-            addPreferencesFromResource(R.xml.pref_config_read)
-            upPreferenceSummary(PreferKey.pageTouchSlop, slopSquare.toString())
-            if (!CanvasRecorderFactory.isSupport) {
-                removePref(PreferKey.optimizeRender)
-                preferenceScreen.removePreferenceRecursively(PreferKey.optimizeRender)
+            try {
+                addPreferencesFromResource(R.xml.pref_config_read)
+                upPreferenceSummary(PreferKey.pageTouchSlop, slopSquare.toString())
+                if (!CanvasRecorderFactory.isSupport) {
+                    removePref(PreferKey.optimizeRender)
+                    preferenceScreen.removePreferenceRecursively(PreferKey.optimizeRender)
+                }
+            } catch (e: Exception) {
+                LogUtils.e("ReadPreferenceFragment", "Error loading preferences: ${e.message}")
             }
         }
 
@@ -115,6 +143,21 @@ class MoreConfigDialog : BasePrefDialogFragment() {
             key: String?
         ) {
             when (key) {
+                // AI配置变更处理
+                PreferKey.aiModel -> {
+                    val modelValue = sharedPreferences?.getString(PreferKey.aiModel, "")
+                    LogUtils.d("MoreConfigDialog", "监听器被触发! Updated ai_model: $modelValue")
+                    if (!modelValue.isNullOrEmpty() && modelValue.contains(":")) {
+                        // 解析provider部分，格式为"provider:model_id"
+                        val provider = modelValue.split(":")[0]
+                        // 更新ai_provider配置
+                        sharedPreferences?.edit()?.apply {
+                            putString(PreferKey.aiProvider, provider)
+                            apply()
+                        }
+                    }
+                }
+                
                 PreferKey.readBodyToLh -> activity?.recreate()
                 PreferKey.hideStatusBar -> {
                     ReadBookConfig.hideStatusBar = getPrefBoolean(PreferKey.hideStatusBar)

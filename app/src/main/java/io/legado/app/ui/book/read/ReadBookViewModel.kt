@@ -31,6 +31,7 @@ import io.legado.app.model.localBook.LocalBook
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.book.read.page.entities.TextChapter
+import io.legado.app.ui.book.read.mode.ReadModeManager
 import io.legado.app.ui.book.searchContent.SearchResult
 import io.legado.app.utils.DocumentUtils
 import io.legado.app.utils.FileUtils
@@ -558,5 +559,4 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
             ReadAloud.stop(context)
         }
     }
-
 }

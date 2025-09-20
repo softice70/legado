@@ -9,6 +9,7 @@ import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookProgress
 import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.ReadRecord
+import io.legado.app.ui.book.read.mode.ReadModeManager
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.ContentProcessor
@@ -67,6 +68,16 @@ object ReadBook : CoroutineScope by MainScope() {
     var nextTextChapter: TextChapter? = null
     var bookSource: BookSource? = null
     var msg: String? = null
+    // 阅读模式管理器
+    lateinit var readModeManager: ReadModeManager
+
+    // 当前章节信息
+    val curChapter: BookChapter?
+        get() {
+            return book?.let {
+                appDb.bookChapterDao.getChapter(it.bookUrl, durChapterIndex)
+            }
+        }
     private val loadingChapters = arrayListOf<Int>()
     private val readRecord = ReadRecord()
     var readStartTime: Long = System.currentTimeMillis()
@@ -111,6 +122,16 @@ object ReadBook : CoroutineScope by MainScope() {
             loadingChapters.clear()
             downloadedChapters.clear()
             downloadFailChapters.clear()
+        }
+        
+        // 在书籍数据初始化完成后预加载当前章节和下一章的摘要（无论当前是什么模式）
+        launch {
+            delay(500) // 延迟一下，确保书籍数据完全加载
+            val currentChapter = book?.let { appDb.bookChapterDao.getChapter(it.bookUrl, durChapterIndex) } ?: return@launch
+            val nextChapter = if (durChapterIndex + 1 < simulatedChapterSize) {
+                book?.let { appDb.bookChapterDao.getChapter(it.bookUrl, durChapterIndex + 1) }
+            } else null
+            readModeManager.preloadSummary(currentChapter, nextChapter)
         }
     }
 
@@ -341,6 +362,16 @@ object ReadBook : CoroutineScope by MainScope() {
             callBack?.upMenuView()
             AppLog.putDebug("moveToNextChapter-curPageChanged()")
             curPageChanged()
+            
+            // 预加载当前章节和下一章的摘要（无论当前是什么模式）
+            launch {
+                val currentChapter = book?.let { appDb.bookChapterDao.getChapter(it.bookUrl, durChapterIndex) } ?: return@launch
+                val nextChapter = if (durChapterIndex + 1 < simulatedChapterSize) {
+                    book?.let { appDb.bookChapterDao.getChapter(it.bookUrl, durChapterIndex + 1) }
+                } else null
+                readModeManager.preloadSummary(currentChapter, nextChapter)
+            }
+            
             return true
         } else {
             AppLog.putDebug("跳转下一章失败,没有下一章")
@@ -401,6 +432,16 @@ object ReadBook : CoroutineScope by MainScope() {
             saveRead()
             callBack?.upMenuView()
             curPageChanged()
+            
+            // 预加载当前章节和下一章的摘要（无论当前是什么模式）
+            launch {
+                val currentChapter = book?.let { appDb.bookChapterDao.getChapter(it.bookUrl, durChapterIndex) } ?: return@launch
+                val nextChapter = if (durChapterIndex + 1 < simulatedChapterSize) {
+                    book?.let { appDb.bookChapterDao.getChapter(it.bookUrl, durChapterIndex + 1) }
+                } else null
+                readModeManager.preloadSummary(currentChapter, nextChapter)
+            }
+            
             return true
         } else {
             return false
@@ -468,6 +509,15 @@ object ReadBook : CoroutineScope by MainScope() {
         }
         upReadTime()
         preDownload()
+        
+        // 在页面变化时预加载当前章节和下一章的摘要（无论当前是什么模式）
+        launch {
+            val currentChapter = book?.let { appDb.bookChapterDao.getChapter(it.bookUrl, durChapterIndex) } ?: return@launch
+            val nextChapter = if (durChapterIndex + 1 < simulatedChapterSize) {
+                book?.let { appDb.bookChapterDao.getChapter(it.bookUrl, durChapterIndex + 1) }
+            } else null
+            readModeManager.preloadSummary(currentChapter, nextChapter)
+        }
     }
 
     /**
@@ -595,6 +645,20 @@ object ReadBook : CoroutineScope by MainScope() {
             } finally {
                 removeLoading(index)
             }
+        }
+    }
+
+    /**
+     * 重新加载当前章节内容
+     * 用于在切换阅读模式（如摘要模式）后刷新内容
+     */
+    fun reloadCurrentChapter() {
+        // 清除当前章节缓存，强制重新加载
+        curTextChapter = null
+        // 重新加载当前章节内容
+        loadContent(durChapterIndex, resetPageOffset = true) {
+            // 加载完成后更新视图
+            callBack?.upContent()
         }
     }
 

@@ -55,6 +55,12 @@ import java.time.format.DateTimeFormatter
 abstract class BaseReadBookActivity :
     VMBaseActivity<ActivityBookReadBinding, ReadBookViewModel>(imageBg = false) {
 
+    abstract fun upContent(
+        relativePosition: Int,
+        resetPageOffset: Boolean,
+        success: (() -> Unit)?
+    ): Unit
+    
     override val binding by viewBinding(ActivityBookReadBinding::inflate)
     override val viewModel by viewModels<ReadBookViewModel>()
     protected val menuLayoutIsVisible

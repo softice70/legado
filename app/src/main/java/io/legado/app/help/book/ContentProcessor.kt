@@ -10,12 +10,14 @@ import io.legado.app.data.entities.ReplaceRule
 import io.legado.app.exception.RegexTimeoutException
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
+import io.legado.app.model.ReadBook
 import io.legado.app.utils.ChineseUtils
 import io.legado.app.utils.escapeRegex
 import io.legado.app.utils.replace
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.runBlocking
 import splitties.init.appCtx
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
@@ -97,7 +99,14 @@ class ContentProcessor private constructor(
         chineseConvert: Boolean = true,
         reSegment: Boolean = true
     ): BookContent {
-        var mContent = content
+        // 检查当前阅读模式，如果是摘要模式，使用摘要内容
+        var mContent = if (ReadBook.readModeManager?.getCurrentMode() == io.legado.app.ui.book.read.mode.ReadModeManager.ReadMode.SUMMARY) {
+            runBlocking {
+                ReadBook.readModeManager?.getDisplayContent(chapter) ?: content
+            }
+        } else {
+            content
+        }
         var sameTitleRemoved = false
         var effectiveReplaceRules: ArrayList<ReplaceRule>? = null
         if (content != "null") {

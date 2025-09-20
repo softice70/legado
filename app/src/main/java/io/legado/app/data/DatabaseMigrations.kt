@@ -20,6 +20,7 @@ object DatabaseMigrations {
             migration_31_32, migration_32_33, migration_33_34, migration_34_35,
             migration_35_36, migration_36_37, migration_37_38, migration_38_39,
             migration_39_40, migration_40_41, migration_41_42, migration_42_43,
+            migration_75_76,
         )
     }
 
@@ -321,6 +322,26 @@ object DatabaseMigrations {
     private val migration_42_43 = object : Migration(42, 43) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE `chapters` ADD `isVolume` INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
+    private val migration_75_76 = object : Migration(75, 76) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `summaryCache` (
+                    `chapterUrl` TEXT NOT NULL,
+                    `bookUrl` TEXT NOT NULL,
+                    `summary` TEXT NOT NULL,
+                    `summaryRatio` REAL NOT NULL DEFAULT 0.3,
+                    `createdAt` INTEGER NOT NULL,
+                    `expiresAt` INTEGER NOT NULL,
+                    PRIMARY KEY(`chapterUrl`)
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_summaryCache_bookUrl` ON `summaryCache` (`bookUrl`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_summaryCache_expiresAt` ON `summaryCache` (`expiresAt`)")
         }
     }
 

@@ -49,6 +49,7 @@ import io.legado.app.utils.openUrl
 import io.legado.app.utils.putPrefBoolean
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.visible
+import io.legado.app.utils.LogUtils
 import splitties.views.onClick
 import splitties.views.onLongClick
 
@@ -155,9 +156,11 @@ class ReadMenu @JvmOverloads constructor(
     }
 
     init {
+        LogUtils.d("ReadMenu", "ReadMenu init called")
         initView()
         upBrightnessState()
         bindEvent()
+        LogUtils.d("ReadMenu", "ReadMenu init completed")
     }
 
     private fun initView(reset: Boolean = false) = binding.run {
@@ -322,6 +325,7 @@ class ReadMenu @JvmOverloads constructor(
     }
 
     private fun bindEvent() = binding.run {
+        LogUtils.d("ReadMenu", "bindEvent called")
         vwMenuBg.setOnClickListener { runMenuOut() }
         titleBar.toolbar.setOnClickListener {
             callBack.openBookInfoActivity()
@@ -488,11 +492,17 @@ class ReadMenu @JvmOverloads constructor(
 
         //设置
         llSetting.setOnClickListener {
+            LogUtils.d("ReadMenu", "Settings button clicked")
             runMenuOut {
+                LogUtils.d("ReadMenu", "Calling showMoreSetting callback")
                 callBack.showMoreSetting()
             }
         }
+
+
     }
+
+
 
     private fun initAnimation() {
         menuTopIn.setAnimationListener(menuInListener)
@@ -585,6 +595,7 @@ class ReadMenu @JvmOverloads constructor(
         fun skipToChapter(index: Int)
         fun onMenuShow()
         fun onMenuHide()
+        fun toggleSummaryMode()
     }
 
 }

@@ -48,6 +48,23 @@ object LogUtils {
         logger.log(Level.WARNING, "$tag $msg")
     }
 
+    /**
+     * 打印调试信息和调用栈
+     */
+    @JvmStatic
+    fun dWithStack(tag: String, msg: String) {
+        val stackTrace = Throwable().stackTrace
+        val stackTraceMsg = buildString {
+            append(msg)
+            append("\nCall Stack:")
+            // 跳过前两行（当前方法和调用者）
+            for (i in 2 until kotlin.math.min(10, stackTrace.size)) {
+                append("\n    at ").append(stackTrace[i])
+            }
+        }
+        logger.log(Level.INFO, "$tag $stackTraceMsg")
+    }
+
     val logger: Logger by lazy {
         Logger.getLogger("Legado")
     }

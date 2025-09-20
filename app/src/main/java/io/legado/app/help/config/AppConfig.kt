@@ -93,6 +93,14 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
                     && appCtx.getPrefBoolean(PreferKey.optimizeRender, false)
 
             PreferKey.recordLog -> recordLog = appCtx.getPrefBoolean(PreferKey.recordLog)
+            
+            // AI相关配置变更处理
+            PreferKey.aiProvider, PreferKey.aiApiKey, PreferKey.aiAccessKey, PreferKey.aiSecretKey,
+            PreferKey.aiApiEndpoint, PreferKey.aiAuthType, PreferKey.wenxinModel, PreferKey.qianwenModel,
+            PreferKey.openaiModel, PreferKey.summaryRatio, PreferKey.aiTemperature,
+            PreferKey.aiMaxTokens, PreferKey.aiTimeout -> {
+                // 这些配置不需要额外处理，因为它们都是直接从SharedPreferences读取的
+            }
 
         }
     }
@@ -692,11 +700,119 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefBoolean(PreferKey.disableHorizontalAnimator, value)
         }
 
-    var enableMangaGray
+    var enableMangaGray: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.enableMangaGray, false)
         set(value) {
             appCtx.putPrefBoolean(PreferKey.enableMangaGray, value)
         }
+
+    // AI大模型配置
+    val aiProvider: String
+        get() = appCtx.getPrefString(PreferKey.aiProvider, "local") ?: "local"
+
+    val aiApiKey: String?
+        get() = appCtx.getPrefString(PreferKey.aiApiKey)
+
+    val aiAccessKey: String?
+        get() = appCtx.getPrefString(PreferKey.aiAccessKey)
+
+    val aiSecretKey: String?
+        get() = appCtx.getPrefString(PreferKey.aiSecretKey)
+
+    val aiApiEndpoint: String?
+        get() = appCtx.getPrefString(PreferKey.aiApiEndpoint)
+
+    val aiAuthType: String
+        get() = appCtx.getPrefString(PreferKey.aiAuthType, "api_key") ?: "api_key"
+
+    val wenxinModel: String
+        get() = appCtx.getPrefString(PreferKey.wenxinModel, "ernie-3.5-8k") ?: "ernie-3.5-8k"
+
+    val qianwenModel: String
+        get() = appCtx.getPrefString(PreferKey.qianwenModel, "qwen-turbo") ?: "qwen-turbo"
+
+    val openaiModel: String
+        get() = appCtx.getPrefString(PreferKey.openaiModel, "gpt-3.5-turbo") ?: "gpt-3.5-turbo"
+
+    val summaryRatio: Int
+        get() = appCtx.getPrefInt(PreferKey.summaryRatio, 30)
+
+    val aiTemperature: Float
+        get() = appCtx.getPrefInt(PreferKey.aiTemperature, 7) / 10.0f
+
+    val aiMaxTokens: Int
+        get() = appCtx.getPrefInt(PreferKey.aiMaxTokens, 1000)
+
+    val aiTimeout: Int
+        get() = appCtx.getPrefInt(PreferKey.aiTimeout, 30)
+
+    /**
+     * 获取当前选择的AI模型
+     */
+    fun getCurrentAiModel(): String {
+        return when (aiProvider) {
+            "wenxin" -> wenxinModel
+            "qianwen" -> qianwenModel
+            "openai" -> openaiModel
+            else -> "local"
+        }
+    }
+
+    /**
+     * 检查AI配置是否完整
+     */
+    fun isAiConfigValid(): Boolean {
+        return when (aiProvider) {
+            "local" -> true
+            "wenxin", "qianwen" -> {
+                when (aiAuthType) {
+                    "api_key" -> !aiApiKey.isNullOrBlank()
+                    "ak_sk" -> !aiAccessKey.isNullOrBlank() && !aiSecretKey.isNullOrBlank()
+                    else -> false
+                }
+            }
+            "openai" -> !aiApiKey.isNullOrBlank()
+            else -> false
+        }
+    }
+
+    /**
+     * 获取API认证头
+     */
+    fun getAiAuthHeaders(): Map<String, String> {
+        val headers = mutableMapOf<String, String>()
+        when (aiProvider) {
+            "wenxin", "qianwen" -> {
+                when (aiAuthType) {
+                    "api_key" -> {
+                        aiApiKey?.let { headers["Authorization"] = "Bearer $it" }
+                    }
+                    "ak_sk" -> {
+                        // AK/SK认证需要特殊处理，通常需要生成签名
+                        aiAccessKey?.let { headers["X-Access-Key"] = it }
+                        aiSecretKey?.let { headers["X-Secret-Key"] = it }
+                    }
+                }
+            }
+            "openai" -> {
+                aiApiKey?.let { headers["Authorization"] = "Bearer $it" }
+            }
+        }
+        headers["Content-Type"] = "application/json"
+        return headers
+    }
+
+    /**
+     * 获取API端点URL
+     */
+    fun getAiApiUrl(): String? {
+        return when (aiProvider) {
+            "wenxin" -> aiApiEndpoint ?: "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions"
+            "qianwen" -> aiApiEndpoint ?: "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+            "openai" -> aiApiEndpoint ?: "https://api.openai.com/v1/chat/completions"
+            else -> null
+        }
+    }
 
 }
 

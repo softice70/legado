@@ -370,7 +370,15 @@
                 <View
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="2"
+                    android:layout_weight="1"
+                    android:importantForAccessibility="no" />
+
+
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
                     android:importantForAccessibility="no" />
 
                 <!--界面按钮-->
@@ -414,7 +422,7 @@
                 <View
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="2"
+                    android:layout_weight="1"
                     android:importantForAccessibility="no" />
 
                 <!--设置按钮-->

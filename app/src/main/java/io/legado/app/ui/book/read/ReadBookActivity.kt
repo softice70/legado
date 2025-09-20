@@ -13,6 +13,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.widget.FrameLayout
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -48,6 +49,8 @@ import io.legado.app.help.book.isMobi
 import io.legado.app.help.book.removeType
 import io.legado.app.help.book.update
 import io.legado.app.help.config.AppConfig
+import io.legado.app.ui.book.read.mode.ReadModeManager
+import io.legado.app.ui.book.read.ui.SummaryLoadingView
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.config.ReadTipConfig
 import io.legado.app.help.coroutine.Coroutine
@@ -254,6 +257,11 @@ class ReadBookActivity : BaseReadBookActivity(),
     }
     private var justInitData: Boolean = false
     private var syncDialog: AlertDialog? = null
+    
+    // 摘要加载视图
+    private val summaryLoadingView: SummaryLoadingView by lazy {
+        SummaryLoadingView(this)
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -265,6 +273,30 @@ class ReadBookActivity : BaseReadBookActivity(),
         window.setBackgroundDrawable(null)
         upScreenTimeOut()
         ReadBook.register(this)
+        
+        // 初始化摘要加载视图
+        binding.root.addView(summaryLoadingView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.CENTER
+        ))
+        
+        // 初始化阅读模式管理器，传入加载视图
+        ReadBook.readModeManager = io.legado.app.ui.book.read.mode.ReadModeManager(this, summaryLoadingView)
+        
+        // 监听阅读模式变化，更新UI
+        ReadBook.readModeManager?.currentMode?.observe(this) { newMode ->
+            LogUtils.d("ReadBookActivity", "Reading mode changed to: $newMode")
+            // 更新菜单图标
+            menu?.findItem(R.id.menu_summary_mode)?.let {
+                if (newMode == ReadModeManager.ReadMode.SUMMARY) {
+                    it.setIcon(R.drawable.ic_read_mode_summary)
+                } else {
+                    it.setIcon(R.drawable.ic_read_mode_normal)
+                }
+            }
+        }
+        
         onBackPressedDispatcher.addCallback(this) {
             if (isShowingSearchResult) {
                 exitSearchMenu()
@@ -406,8 +438,17 @@ class ReadBookActivity : BaseReadBookActivity(),
     }
 
     override fun onMenuOpened(featureId: Int, menu: Menu): Boolean {
-        menu.findItem(R.id.menu_same_title_removed)?.isChecked =
+        menu.findItem(R.id.menu_same_title_removed)?.isChecked = 
             ReadBook.curTextChapter?.sameTitleRemoved == true
+        val summaryModeItem = menu.findItem(R.id.menu_summary_mode)
+        summaryModeItem?.isChecked = 
+            ReadBook.readModeManager?.currentMode?.value == ReadModeManager.ReadMode.SUMMARY
+        // 根据当前阅读模式动态调整图标
+        if (ReadBook.readModeManager?.currentMode?.value == ReadModeManager.ReadMode.SUMMARY) {
+            summaryModeItem?.setIcon(R.drawable.ic_read_mode_summary)
+        } else {
+            summaryModeItem?.setIcon(R.drawable.ic_read_mode_normal)
+        }
         return super.onMenuOpened(featureId, menu)
     }
 
@@ -510,6 +551,11 @@ class ReadBookActivity : BaseReadBookActivity(),
 
             R.id.menu_download -> showDownloadDialog()
             R.id.menu_add_bookmark -> addBookmark()
+            R.id.menu_summary_mode -> {
+                LogUtils.d("ReadBookActivity", "before toggleSummaryMode")
+                ReadBook.readModeManager?.toggleSummaryMode()
+                LogUtils.d("ReadBookActivity", "after toggleSummaryMode")
+            }
             R.id.menu_simulated_reading -> showSimulatedReading()
             R.id.menu_edit_content -> showDialogFragment(ContentEditDialog())
             R.id.menu_update_toc -> ReadBook.book?.let {
@@ -1600,6 +1646,11 @@ class ReadBookActivity : BaseReadBookActivity(),
         if (!BuildConfig.DEBUG) {
             Backup.autoBack(this)
         }
+    }
+
+    // 实现摘要模式切换方法
+    override fun toggleSummaryMode() {
+        ReadBook.readModeManager.toggleSummaryMode()
     }
 
     override fun observeLiveBus() = binding.run {
