@@ -14,6 +14,7 @@ import android.media.AudioManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.PowerManager
+import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.telephony.PhoneStateListener
@@ -273,6 +274,7 @@ abstract class BaseReadAloudService : BaseService(),
             }
             paragraphStartPos = pos
             launch(Main) {
+                upMediaMetadata() // 更新媒体元数据
                 if (play) play() else pageChanged = true
             }
         }.onError {
@@ -291,6 +293,7 @@ abstract class BaseReadAloudService : BaseService(),
         needResumeOnAudioFocusGain = false
         needResumeOnCallStateIdle = false
         upReadAloudNotification()
+        upMediaMetadata() // 确保媒体元数据是最新的
         upMediaSessionPlaybackState(PlaybackStateCompat.STATE_PLAYING)
         postEvent(EventBus.ALOUD_STATE, Status.PLAY)
     }
@@ -350,6 +353,7 @@ abstract class BaseReadAloudService : BaseService(),
                 }
             }
             upTtsProgress(readAloudNumber + 1)
+            upMediaSessionPlaybackState(if (pause) PlaybackStateCompat.STATE_PAUSED else PlaybackStateCompat.STATE_PLAYING)
             play()
         } else {
             toLast = true
@@ -376,9 +380,47 @@ abstract class BaseReadAloudService : BaseService(),
                 }
             }
             upTtsProgress(readAloudNumber + 1)
+            upMediaSessionPlaybackState(if (pause) PlaybackStateCompat.STATE_PAUSED else PlaybackStateCompat.STATE_PLAYING)
             play()
         } else {
             nextChapter()
+        }
+    }
+
+    /**
+     * 跳转到指定段落
+     */
+    private fun seekToParagraph(targetParagraph: Int) {
+        if (targetParagraph < 0 || targetParagraph >= contentList.size) {
+            return
+        }
+        
+        playStop()
+        
+        // 计算新的阅读位置
+        var newReadAloudNumber = 0
+        for (i in 0 until targetParagraph) {
+            newReadAloudNumber += contentList[i].length + 1
+        }
+        
+        nowSpeak = targetParagraph
+        readAloudNumber = newReadAloudNumber
+        paragraphStartPos = 0
+        
+        // 更新页面位置
+        textChapter?.let {
+            val targetPageIndex = it.getPageIndexByCharIndex(readAloudNumber)
+            if (targetPageIndex != pageIndex) {
+                pageIndex = targetPageIndex
+                ReadBook.skipToPage(pageIndex)
+            }
+        }
+        
+        upTtsProgress(readAloudNumber + 1)
+        upMediaSessionPlaybackState(if (pause) PlaybackStateCompat.STATE_PAUSED else PlaybackStateCompat.STATE_PLAYING)
+        
+        if (!pause) {
+            play()
         }
     }
 
@@ -459,13 +501,29 @@ abstract class BaseReadAloudService : BaseService(),
     }
 
     /**
+     * 更新媒体元数据
+     */
+    private fun upMediaMetadata() {
+        val totalDuration = contentList.size.toLong() * 1000 // 将段落数转换为毫秒，每段落按1秒计算
+        val metadata = MediaMetadataCompat.Builder()
+            .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, cover)
+            .putText(MediaMetadataCompat.METADATA_KEY_TITLE, textChapter?.title ?: "朗读中")
+            .putText(MediaMetadataCompat.METADATA_KEY_ARTIST, ReadBook.book?.name ?: "")
+            .putText(MediaMetadataCompat.METADATA_KEY_ALBUM, ReadBook.book?.author ?: "")
+            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, totalDuration)
+            .build()
+        mediaSessionCompat.setMetadata(metadata)
+    }
+
+    /**
      * 更新媒体状态
      */
     private fun upMediaSessionPlaybackState(state: Int) {
+        val currentPosition = nowSpeak.toLong() * 1000 // 将当前段落索引转换为毫秒位置
         mediaSessionCompat.setPlaybackState(
             PlaybackStateCompat.Builder()
                 .setActions(MediaHelp.MEDIA_SESSION_ACTIONS)
-                .setState(state, nowSpeak.toLong(), 1f)
+                .setState(state, currentPosition, 1f)
                 // 为系统媒体控件添加定时按钮
                 .addCustomAction(
                     PlaybackStateCompat.CustomAction.Builder(
@@ -511,6 +569,12 @@ abstract class BaseReadAloudService : BaseService(),
 
                 override fun onStop() {
                     stopSelf()
+                }
+
+                override fun onSeekTo(pos: Long) {
+                    // 将毫秒位置转换为段落索引
+                    val targetParagraph = (pos / 1000).toInt()
+                    seekToParagraph(targetParagraph)
                 }
 
                 override fun onCustomAction(action: String, extras: Bundle?) {
