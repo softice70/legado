@@ -90,6 +90,9 @@ abstract class BaseReadAloudService : BaseService(),
         }
 
         private const val TAG = "BaseReadAloudService"
+        
+        // 每段落的持续时间（毫秒），用于计算媒体控制器的进度条
+        const val PARAGRAPH_DURATION_MS = 6400
 
     }
 
@@ -504,7 +507,9 @@ abstract class BaseReadAloudService : BaseService(),
      * 更新媒体元数据
      */
     private fun upMediaMetadata() {
-        val totalDuration = contentList.size.toLong() * 1000 // 将段落数转换为毫秒，每段落按1秒计算
+        val totalDuration = contentList.size.toLong() * PARAGRAPH_DURATION_MS // 将段落数转换为毫秒
+        // 添加日志跟踪nowSpeak和contentList.size
+        LogUtils.d("ReadAloud", "upMediaMetadata: contentList.size=${contentList.size}, nowSpeak=$nowSpeak, totalDuration=${totalDuration}ms")
         val metadata = MediaMetadataCompat.Builder()
             .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, cover)
             .putText(MediaMetadataCompat.METADATA_KEY_TITLE, textChapter?.title ?: "朗读中")
@@ -518,8 +523,18 @@ abstract class BaseReadAloudService : BaseService(),
     /**
      * 更新媒体状态
      */
-    private fun upMediaSessionPlaybackState(state: Int) {
-        val currentPosition = nowSpeak.toLong() * 1000 // 将当前段落索引转换为毫秒位置
+    protected fun upMediaSessionPlaybackState(state: Int) {
+        // 添加边界检查，确保nowSpeak不会超过contentList.size
+        val safeNowSpeak = if (nowSpeak >= contentList.size) contentList.size - 1 else nowSpeak
+        if (nowSpeak >= contentList.size) {
+            LogUtils.d("ReadAloud", "ReadAloud warning: nowSpeak($nowSpeak) >= contentList.size(${contentList.size}), corrected to $safeNowSpeak")
+            nowSpeak = safeNowSpeak // 修正nowSpeak的值
+        }
+        val currentPosition = safeNowSpeak.toLong() * PARAGRAPH_DURATION_MS // 将当前段落索引转换为毫秒位置
+        val totalDuration = contentList.size.toLong() * PARAGRAPH_DURATION_MS
+        
+        LogUtils.d("ReadAloud", "upMediaSessionPlaybackState: state=$state, currentPosition=${currentPosition}ms, totalDuration=${totalDuration}ms")
+        
         mediaSessionCompat.setPlaybackState(
             PlaybackStateCompat.Builder()
                 .setActions(MediaHelp.MEDIA_SESSION_ACTIONS)
@@ -573,7 +588,8 @@ abstract class BaseReadAloudService : BaseService(),
 
                 override fun onSeekTo(pos: Long) {
                     // 将毫秒位置转换为段落索引
-                    val targetParagraph = (pos / 1000).toInt()
+                    val targetParagraph = (pos / PARAGRAPH_DURATION_MS).toInt()
+                    LogUtils.d("ReadAloud", "onSeekTo: pos=${pos}ms, targetParagraph=$targetParagraph, contentList.size=${contentList.size}")
                     seekToParagraph(targetParagraph)
                 }
 

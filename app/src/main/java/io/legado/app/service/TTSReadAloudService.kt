@@ -10,6 +10,7 @@ import io.legado.app.constant.AppPattern
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.MediaHelp
 import io.legado.app.help.config.AppConfig
+import android.support.v4.media.session.PlaybackStateCompat
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.model.ReadAloud
@@ -91,8 +92,8 @@ class TTSReadAloudService : BaseReadAloudService(), TextToSpeech.OnInitListener 
         MediaHelp.playSilentSound(this@TTSReadAloudService)
         speakJob?.cancel()
         speakJob = execute {
-            LogUtils.d(TAG, "朗读列表大小 ${contentList.size}")
-            LogUtils.d(TAG, "朗读页数 ${textChapter?.pageSize}")
+            LogUtils.d(TAG, "contentList size: ${contentList.size}")
+            LogUtils.d(TAG, "textChapter pageSize: ${textChapter?.pageSize}")
             val tts = textToSpeech ?: throw NoStackTraceException("tts is null")
             val contentList = contentList
             var isAddedText = false
@@ -131,7 +132,7 @@ class TTSReadAloudService : BaseReadAloudService(), TextToSpeech.OnInitListener 
                 }
                 isAddedText = true
             }
-            LogUtils.d(TAG, "朗读内容添加完成")
+            LogUtils.d(TAG, "The reading content has been added")
             if (!isAddedText) {
                 playStop()
                 delay(1000)
@@ -244,7 +245,18 @@ class TTSReadAloudService : BaseReadAloudService(), TextToSpeech.OnInitListener 
                     nextChapter()
                     return
                 }
-            } while (contentList[nowSpeak].matches(AppPattern.notReadAloudRegex))
+                // 添加日志跟踪nowSpeak递增情况
+                AppLog.putDebug("ReadAloud: nextParagraph: nowSpeak=$nowSpeak, contentList.size=${contentList.size}")
+                // 检查是否需要跳过当前段落（避免在循环条件中越界访问）
+                val shouldSkip = nowSpeak < contentList.size && contentList[nowSpeak].matches(AppPattern.notReadAloudRegex)
+                if (shouldSkip) {
+                    // 记录跳过的段落
+                    AppLog.putDebug("ReadAloud: Skip all punctuation paragraphs: nowSpeak=$nowSpeak")
+                }
+            } while (nowSpeak < contentList.size && contentList[nowSpeak].matches(AppPattern.notReadAloudRegex))
+            
+            // 在确定下一个要朗读的段落后，更新系统媒体控制器的进度条
+            upMediaSessionPlaybackState(PlaybackStateCompat.STATE_PLAYING)
         }
 
         @Deprecated("Deprecated in Java")
